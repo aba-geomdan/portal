@@ -124,6 +124,79 @@
 
   /* emoji-as-icon fallback (no icon font dependency) */
   .emoji { font-style: normal; line-height: 1; }
+
+  /* 관리자 잠금/토글 */
+  .admin-lock {
+    width: 100%; text-align: left; cursor: pointer;
+    background: #FBF4F5; border: 1px dashed var(--brand);
+    border-radius: 14px; padding: 15px 18px;
+    display: flex; align-items: center; gap: 12px;
+    font-family: inherit; color: var(--ink);
+    transition: background .12s ease;
+  }
+  .admin-lock:hover { background: var(--brand-soft); }
+  .admin-lock .lock-icon {
+    width: 40px; height: 40px; border-radius: 11px;
+    background: var(--white); color: var(--brand-dark);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 19px; flex-shrink: 0;
+  }
+  .admin-lock .lock-name { font-size: 15px; font-weight: 800; }
+  .admin-lock .lock-desc { font-size: 12px; color: var(--sub); margin-top: 1px; }
+  .admin-lock .lock-chevron { margin-left: auto; color: var(--brand); font-size: 15px; }
+
+  #adminPanel { display: none; margin-top: 12px; }
+  #adminPanel.open { display: block; }
+  #adminPanel .admin-card { margin-bottom: 12px; }
+  .admin-logout {
+    display: inline-flex; align-items: center; gap: 6px;
+    margin: 2px 0 4px 2px; padding: 6px 12px;
+    font-size: 12px; font-weight: 600; font-family: inherit;
+    color: var(--sub); background: var(--white);
+    border: 1px solid var(--line); border-radius: 8px; cursor: pointer;
+  }
+  .admin-logout:hover { color: var(--brand-dark); border-color: var(--brand); }
+
+  /* 로그인 모달 */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.5); z-index: 1000;
+    align-items: center; justify-content: center; padding: 20px;
+  }
+  .modal-overlay.show { display: flex; }
+  .modal-box {
+    background: var(--white); border-radius: 16px;
+    max-width: 380px; width: 100%; overflow: hidden;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+  }
+  .modal-head {
+    padding: 20px 22px 14px; border-bottom: 1px solid var(--line);
+    background: linear-gradient(135deg, var(--brand-soft) 0%, #FFF7F8 100%);
+  }
+  .modal-head .m-title { font-size: 16px; font-weight: 800; color: var(--brand-dark); }
+  .modal-head .m-sub { font-size: 12px; color: var(--sub); margin-top: 4px; }
+  .modal-body { padding: 20px 22px; display: flex; flex-direction: column; gap: 12px; }
+  .modal-body label { font-size: 11px; font-weight: 700; color: var(--sub); margin-bottom: 5px; display: block; }
+  .modal-body input {
+    width: 100%; padding: 11px 13px; font-size: 14px;
+    border: 1.5px solid var(--line); border-radius: 8px;
+    background: #FFFCF6; font-family: inherit; outline: none; box-sizing: border-box;
+  }
+  .modal-body input:focus { border-color: var(--brand); }
+  .modal-err {
+    font-size: 12px; color: #C53030; background: #FFF0F0;
+    border: 1px solid #FFD0D0; border-radius: 6px; padding: 8px 11px;
+    line-height: 1.5; display: none;
+  }
+  .modal-err.show { display: block; }
+  .modal-foot { padding: 4px 22px 20px; display: flex; gap: 8px; }
+  .modal-foot button {
+    flex: 1; padding: 11px; font-size: 13px; font-weight: 700;
+    border-radius: 8px; cursor: pointer; font-family: inherit; border: none;
+  }
+  .btn-cancel { background: var(--white); color: var(--sub); border: 1px solid var(--line) !important; }
+  .btn-login { background: var(--brand); color: var(--white); }
+  .btn-login:disabled { background: #D0C5C8; cursor: not-allowed; }
 </style>
 </head>
 <body>
@@ -194,21 +267,45 @@
 
     </div>
 
-    <div class="divider">
+    <div class="divider" style="margin-bottom:14px;">
       <span class="label">관리자 전용</span>
       <span class="rule"></span>
     </div>
 
-    <a class="card" href="https://aba-geomdan.github.io/aba-reels-maker/">
-      <div class="admin-card">
-        <div class="aicon"><span class="emoji">🎬</span></div>
-        <div>
-          <div class="name">ABA 릴스 메이커</div>
-          <div class="desc">콘텐츠 슬라이드 제작</div>
-        </div>
-        <div class="arrow"><span class="emoji">→</span></div>
+    <button type="button" class="admin-lock" id="adminLock" onclick="openAdminLogin()">
+      <div class="lock-icon"><span class="emoji">🔒</span></div>
+      <div>
+        <div class="lock-name">관리자 전용 도구</div>
+        <div class="lock-desc">로그인하면 관리자 도구가 열립니다</div>
       </div>
-    </a>
+      <div class="lock-chevron"><span class="emoji">▸</span></div>
+    </button>
+
+    <div id="adminPanel">
+      <button type="button" class="admin-logout" id="adminLogout" onclick="adminLogout()">🔓 <span id="adminWho">관리자</span> · 잠그기</button>
+
+      <a class="card" href="https://aba-geomdan.github.io/aba-reels-maker/">
+        <div class="admin-card">
+          <div class="aicon"><span class="emoji">🎬</span></div>
+          <div>
+            <div class="name">ABA 릴스 메이커</div>
+            <div class="desc">콘텐츠 슬라이드 제작</div>
+          </div>
+          <div class="arrow"><span class="emoji">→</span></div>
+        </div>
+      </a>
+
+      <a class="card" href="https://aba-geomdan.github.io/geomdan-tracker/">
+        <div class="admin-card">
+          <div class="aicon"><span class="emoji">⏱️</span></div>
+          <div>
+            <div class="name">검단ABA 자격시간 트래커</div>
+            <div class="desc">QABA 수련시간 관리</div>
+          </div>
+          <div class="arrow"><span class="emoji">→</span></div>
+        </div>
+      </a>
+    </div>
 
     <div class="foot">
       <span class="copy">© 검단ABA언어행동연구소 | 민다혜 (BCBA)</span><br />
@@ -216,5 +313,134 @@
     </div>
 
   </div>
+
+  <!-- 관리자 로그인 모달 -->
+  <div class="modal-overlay" id="loginModal" onclick="if(event.target===this)closeAdminLogin()">
+    <div class="modal-box">
+      <div class="modal-head">
+        <div class="m-title">🔒 관리자 로그인</div>
+        <div class="m-sub">검단ABA 관리자 계정으로 로그인하세요</div>
+      </div>
+      <div class="modal-body">
+        <div>
+          <label>아이디</label>
+          <input type="text" id="adminId" placeholder="아이디 입력" autocomplete="off" autocapitalize="off" spellcheck="false" />
+        </div>
+        <div>
+          <label>비밀번호</label>
+          <input type="password" id="adminPw" placeholder="비밀번호 입력" autocomplete="new-password" />
+        </div>
+        <div class="modal-err" id="loginErr"></div>
+      </div>
+      <div class="modal-foot">
+        <button class="btn-cancel" onclick="closeAdminLogin()">취소</button>
+        <button class="btn-login" id="loginBtn" onclick="submitAdminLogin()">로그인</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      var SUPABASE_URL = 'https://vdubgrxwijydwfabwpnk.supabase.co';
+      var SUPABASE_ANON_KEY = 'sb_publishable_bp4Fza--AQ9Kjw3n-60XjQ__oXq1DeR';
+      var FN_URL = SUPABASE_URL + '/functions/v1/tracker-data';
+      var SESSION_KEY = 'geomdan_portal_admin';
+
+      var panel = document.getElementById('adminPanel');
+      var lock = document.getElementById('adminLock');
+      var modal = document.getElementById('loginModal');
+      var idInput = document.getElementById('adminId');
+      var pwInput = document.getElementById('adminPw');
+      var errBox = document.getElementById('loginErr');
+      var loginBtn = document.getElementById('loginBtn');
+      var whoLabel = document.getElementById('adminWho');
+
+      function unlock(name) {
+        panel.classList.add('open');
+        lock.style.display = 'none';
+        if (whoLabel) whoLabel.textContent = name || '관리자';
+      }
+      function lockPanel() {
+        panel.classList.remove('open');
+        lock.style.display = '';
+      }
+
+      // 세션 복원 (탭 유지, 닫으면 만료)
+      try {
+        var saved = sessionStorage.getItem(SESSION_KEY);
+        if (saved) {
+          var u = JSON.parse(saved);
+          if (u && u.role === 'admin') unlock(u.name || u.user_id);
+        }
+      } catch (e) {}
+
+      window.openAdminLogin = function () {
+        errBox.classList.remove('show');
+        errBox.textContent = '';
+        idInput.value = '';
+        pwInput.value = '';
+        modal.classList.add('show');
+        setTimeout(function () { idInput.focus(); }, 50);
+      };
+      window.closeAdminLogin = function () { modal.classList.remove('show'); };
+
+      window.adminLogout = function () {
+        try { sessionStorage.removeItem(SESSION_KEY); } catch (e) {}
+        lockPanel();
+      };
+
+      window.submitAdminLogin = async function () {
+        var id = idInput.value.trim();
+        var pw = pwInput.value;
+        if (!id || !pw) {
+          errBox.textContent = '아이디와 비밀번호를 모두 입력해주세요';
+          errBox.classList.add('show');
+          return;
+        }
+        loginBtn.disabled = true;
+        loginBtn.textContent = '로그인 중...';
+        errBox.classList.remove('show');
+        try {
+          var res = await fetch(FN_URL, {
+            method: 'POST',
+            headers: {
+              'apikey': SUPABASE_ANON_KEY,
+              'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ action: 'authLogin', params: { userId: id, password: pw } })
+          });
+          var out = await res.json();
+          var result = out && out.data ? out.data : out;
+          if (result && result.success && result.user) {
+            if (result.user.role !== 'admin') {
+              errBox.textContent = '관리자 전용입니다. 관리자 계정으로 로그인하세요.';
+              errBox.classList.add('show');
+            } else {
+              try { sessionStorage.setItem(SESSION_KEY, JSON.stringify(result.user)); } catch (e) {}
+              unlock(result.user.name || result.user.user_id);
+              closeAdminLogin();
+            }
+          } else {
+            errBox.textContent = (result && result.error) ? result.error : '아이디 또는 비밀번호가 올바르지 않습니다';
+            errBox.classList.add('show');
+          }
+        } catch (e) {
+          errBox.textContent = '서버 연결에 실패했습니다. 잠시 후 다시 시도해주세요';
+          errBox.classList.add('show');
+        } finally {
+          loginBtn.disabled = false;
+          loginBtn.textContent = '로그인';
+        }
+      };
+
+      // Enter 키로 로그인
+      [idInput, pwInput].forEach(function (el) {
+        el.addEventListener('keydown', function (e) {
+          if (e.key === 'Enter') window.submitAdminLogin();
+        });
+      });
+    })();
+  </script>
 </body>
 </html>
