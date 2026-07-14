@@ -445,28 +445,43 @@
         loginBtn.textContent = '로그인 중...';
         errBox.classList.remove('show');
         try {
-          var res = await fetch(FN_URL, {
+          // 아이디 → 이메일 변환 (@ 있으면 그대로, 없으면 아이디@geomdan.local)
+          var email = id.indexOf('@') >= 0 ? id : (id + '@geomdan.local');
+          var res = await fetch(SUPABASE_URL + '/auth/v1/token?grant_type=password', {
             method: 'POST',
             headers: {
               'apikey': SUPABASE_ANON_KEY,
-              'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
               'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ action: 'authLogin', params: { userId: id, password: pw } })
+            body: JSON.stringify({ email: email, password: pw })
           });
           var out = await res.json();
-          var result = out && out.data ? out.data : out;
-          if (result && result.success && result.user) {
-            if (result.user.role !== 'admin') {
+          if (out && out.access_token && out.user) {
+            var meta = out.user.user_metadata || {};
+            if (meta.role !== 'admin') {
               errBox.textContent = '관리자 전용입니다. 관리자 계정으로 로그인하세요.';
               errBox.classList.add('show');
+            } else if (meta.is_active === false) {
+              errBox.textContent = '비활성화된 계정입니다.';
+              errBox.classList.add('show');
+            } else if (meta.expires_at && new Date(meta.expires_at) < new Date()) {
+              errBox.textContent = '유효기간이 만료된 계정입니다.';
+              errBox.classList.add('show');
             } else {
-              try { sessionStorage.setItem(SESSION_KEY, JSON.stringify(result.user)); } catch (e) {}
-              unlock(result.user.name || result.user.user_id);
+              var user = {
+                id: out.user.id,
+                user_id: meta.user_id || email.split('@')[0],
+                name: meta.display_name || meta.user_id || '관리자',
+                role: 'admin'
+              };
+              try { sessionStorage.setItem(SESSION_KEY, JSON.stringify(user)); } catch (e) {}
+              unlock(user.name || user.user_id);
               closeAdminLogin();
             }
           } else {
-            errBox.textContent = (result && result.error) ? result.error : '아이디 또는 비밀번호가 올바르지 않습니다';
+            errBox.textContent = (out && out.error_description) ? out.error_description
+              : (out && out.msg) ? out.msg
+              : '아이디 또는 비밀번호가 올바르지 않습니다';
             errBox.classList.add('show');
           }
         } catch (e) {
